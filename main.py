@@ -1,3 +1,5 @@
+from dotenv import load_dotenv
+load_dotenv()
 from fastapi import FastAPI, UploadFile, File, HTTPException, Request
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
@@ -76,10 +78,10 @@ async def chat(request: ChatRequest):
     Ties together Granite 4, tool calling, and embedded search.
     """
     try:
-        reply_text, updated_history = chat_with_granite(request.messages)
+        reply_text, updated_history = await chat_with_granite(request.messages)
         return ChatResponse(reply=reply_text, history=updated_history)
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error processing chat: {str(e)}")
         
 if __name__ == "__main__":
-    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
+    uvicorn.run("main:app", host="0.0.0.0", port=7356, reload=True)
