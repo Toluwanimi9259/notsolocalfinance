@@ -8,6 +8,8 @@
     <!-- Google Fonts for sleek typography -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/static/style.css">
+    <!-- Marked.js for Markdown parsing -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 </head>
 
 <body>
@@ -54,8 +56,14 @@
                 <!-- Messages will appear here -->
                 <div class="message ai">
                     <div class="avatar">AI</div>
-                    <div class="msg-content">Hello! Please upload your bank statement on the left, then ask me anything
-                        about your finances.</div>
+                    <div class="msg-content">
+                        <p>Hello! 👋 I'm your <strong>Financial Assistant</strong>.</p>
+                        <p>To get started:</p>
+                        <ul>
+                            <li><strong>Upload</strong> your bank statement (CSV or PDF) on the left.</li>
+                            <li><strong>Ask</strong> me anything about your spending, trends, or specific transactions.</li>
+                        </ul>
+                    </div>
                 </div>
             </div>
 

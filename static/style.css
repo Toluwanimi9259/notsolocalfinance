@@ -252,11 +252,76 @@ input[type="file"] {
     border-radius: 8px;
     line-height: 1.6;
     font-size: 0.95rem;
+}
+
+.user .msg-content {
     white-space: pre-wrap;
 }
 
 .user .msg-content {
     background-color: #2b2b2b;
+}
+
+/* Markdown Styling */
+.msg-content p {
+    margin-bottom: 0.75rem;
+}
+
+.msg-content p:last-child {
+    margin-bottom: 0;
+}
+
+.msg-content ul, .msg-content ol {
+    margin-bottom: 0.75rem;
+    padding-left: 1.5rem;
+}
+
+.msg-content li {
+    margin-bottom: 0.25rem;
+}
+
+.msg-content table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 1rem 0;
+    font-size: 0.85rem;
+    background-color: rgba(255, 255, 255, 0.03);
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.msg-content th, .msg-content td {
+    padding: 0.6rem 0.75rem;
+    border: 1px solid var(--border-color);
+    text-align: left;
+}
+
+.msg-content th {
+    background-color: var(--bg-dark);
+    font-weight: 600;
+}
+
+.msg-content code {
+    background-color: rgba(255, 255, 255, 0.1);
+    padding: 0.2rem 0.4rem;
+    border-radius: 4px;
+    font-family: monospace;
+    font-size: 0.9em;
+}
+
+.msg-content pre {
+    background-color: var(--bg-dark);
+    padding: 1rem;
+    border-radius: 8px;
+    overflow-x: auto;
+    margin: 1rem 0;
+    border: 1px solid var(--border-color);
+}
+
+.msg-content pre code {
+    background-color: transparent;
+    padding: 0;
+    display: block;
 }
 
 /* Loader */

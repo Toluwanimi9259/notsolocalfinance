@@ -166,7 +166,7 @@ document.addEventListener('DOMContentLoaded', () => {
         chatWindow.innerHTML = `
             <div class="message ai">
                 <div class="avatar">AI</div>
-                <div class="msg-content">Chat history cleared. What would you like to ask about your finances?</div>
+                <div class="msg-content"><p>Chat history cleared. What would you like to ask about your finances?</p></div>
             </div>
         `;
     });
@@ -177,7 +177,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         msgDiv.innerHTML = `
             <div class="avatar">${sender === 'User' ? 'U' : 'AI'}</div>
-            <div class="msg-content">${escapeHTML(text)}</div>
+            <div class="msg-content">${sender === 'User' ? escapeHTML(text) : marked.parse(text)}</div>
         `;
 
         chatWindow.appendChild(msgDiv);
