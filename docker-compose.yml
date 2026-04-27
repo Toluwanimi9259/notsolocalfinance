@@ -1,31 +1,37 @@
 version: '3.8'
 
 services:
-  fastapi-app:
+  app:
     build: .
+    image: finance-ai-app:latest
+    container_name: finance-ai-backend
     ports:
-      - "8000:8000"
+      - "7536:7536"
     volumes:
       - .:/app
     env_file:
       - .env
     environment:
-      - QDRANT_HOST=qdrant
+      - QDRANT_HOST=http://qdrant # Using the service name as the host
       - QDRANT_PORT=6333
       - PYTHONPATH=/app
     depends_on:
-      - qdrant
+      qdrant:
+        condition: service_started
     networks:
       - financial-network
+    restart: unless-stopped
 
   qdrant:
     image: qdrant/qdrant:latest
+    container_name: finance-ai-qdrant
     ports:
       - "6333:6333"
     volumes:
       - qdrant_data:/qdrant/storage
     networks:
       - financial-network
+    restart: unless-stopped
 
 volumes:
   qdrant_data:
