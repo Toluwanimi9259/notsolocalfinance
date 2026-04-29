@@ -51,7 +51,7 @@ SYSTEM_PROMPT = (
 # Pydantic AI now supports OpenRouter natively. 
 # We pass the model directly without needing the openai library.
 agent = Agent(
-    'openrouter:qwen/qwen3.6-flash',
+    'openrouter:mistralai/mistral-nemo',
     system_prompt=SYSTEM_PROMPT,
     deps_type=str,
     instrument=True
@@ -103,45 +103,44 @@ def _convert_history_to_pydantic_ai(history: List[Dict[str, Any]]) -> List[Model
     return pydantic_history
 
 @observe()
-async def chat_with_ai(messages: List[Dict[str, Any]], user_id: str) -> tuple[str, List[Dict[str, Any]]]:
+async def chat_with_ai(messages: List[Dict[str, Any]], user_id: str, session_id: Optional[str] = None) -> tuple[str, List[Dict[str, Any]]]:
     """
     Handles a conversation using Pydantic AI and OpenRouter.
     Returns (response_text, updated_messages_list)
     """
-    with propagate_attributes(user_id=user_id):
-        if not messages:
-            return "No message received.", messages
-            
-        last_message = messages[-1]
-        if last_message.get("role") != "user":
-             return "Please send a user message.", messages
-             
-        user_prompt = last_message.get("content", "")
-        history_messages = messages[:-1]
+    if not messages:
+        return "No message received.", messages
         
-        try:
-            result = await agent.run(
-                user_prompt, 
-                message_history=_convert_history_to_pydantic_ai(history_messages),
-                deps=user_id
-            )
-            
-            # Build back JSON history format
-            new_history = []
-            for msg in result.all_messages():
-                if isinstance(msg, ModelRequest):
-                    for part in msg.parts:
-                        if isinstance(part, TextPart):
-                            new_history.append({"role": "user", "content": part.content})
-                elif isinstance(msg, ModelResponse):
-                    for part in msg.parts:
-                        if isinstance(part, TextPart):
-                             new_history.append({"role": "assistant", "content": part.content})
+    last_message = messages[-1]
+    if last_message.get("role") != "user":
+         return "Please send a user message.", messages
+         
+    user_prompt = last_message.get("content", "")
+    history_messages = messages[:-1]
     
-            return result.output, new_history
-    
-        except Exception as e:
-            return f"Error: {str(e)}", messages
+    try:
+        result = await agent.run(
+            user_prompt, 
+            message_history=_convert_history_to_pydantic_ai(history_messages),
+            deps=user_id
+        )
+        
+        # Build back JSON history format
+        new_history = []
+        for msg in result.all_messages():
+            if isinstance(msg, ModelRequest):
+                for part in msg.parts:
+                    if isinstance(part, TextPart):
+                        new_history.append({"role": "user", "content": part.content})
+            elif isinstance(msg, ModelResponse):
+                for part in msg.parts:
+                    if isinstance(part, TextPart):
+                         new_history.append({"role": "assistant", "content": part.content})
+
+        return result.output, new_history
+
+    except Exception as e:
+        return f"Error: {str(e)}", messages
 
 
 # Backward compatibility

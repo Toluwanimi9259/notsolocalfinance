@@ -12,6 +12,7 @@ from models import ChatRequest, ChatResponse, FileUploadResponse
 from parsers import parse_csv, parse_pdf
 from vdb import store_transactions_in_vdb, clear_vdb_for_user
 from ai_service import chat_with_granite
+from langfuse import propagate_attributes
 from auth import (
     create_access_token, 
     get_current_user_id,
@@ -110,8 +111,10 @@ async def chat(
     request: ChatRequest,
     current_user_id: Annotated[str, Depends(get_current_user_id)]
 ):
+    print(f"DEBUG MAIN: received session_id={request.session_id}")
     try:
-        reply_text, updated_history = await chat_with_granite(request.messages, current_user_id)
+        with propagate_attributes(user_id=current_user_id, session_id=request.session_id):
+            reply_text, updated_history = await chat_with_granite(request.messages, current_user_id, request.session_id)
         return ChatResponse(reply=reply_text, history=updated_history)
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error: {str(e)}")
