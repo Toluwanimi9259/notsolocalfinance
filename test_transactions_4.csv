@@ -1,0 +1,93 @@
+Date,Description,Amount,Category
+2023-10-01,Starbucks,-5.50,Food
+2023-10-02,Target,-125.40,Shopping
+2023-10-03,Salary,3500.00,Income
+2023-10-04,Uber,-18.75,Transport
+2023-10-05,Amazon,-45.99,Shopping
+2023-10-06,Netflix,-15.99,Entertainment
+2023-10-07,McDonald's,-12.30,Food
+2023-10-08,Walmart,-89.60,Groceries
+2023-10-09,Electric Bill,-120.00,Utilities
+2023-10-10,Whole Foods,-105.20,Groceries
+2023-10-11,Spotify,-9.99,Entertainment
+2023-10-12,Shell Fuel,-60.00,Transport
+2023-10-13,Apple Store,-999.00,Shopping
+2023-10-14,Salary,3500.00,Income
+2023-10-15,KFC,-14.25,Food
+2023-10-16,Pharmacy,-22.40,Health
+2023-10-17,Uber,-16.80,Transport
+2023-10-18,Amazon,-75.00,Shopping
+2023-10-19,Water Bill,-30.00,Utilities
+2023-10-20,Domino's Pizza,-19.99,Food
+2023-10-21,Salary,3500.00,Income
+2023-10-22,Adidas,-85.00,Shopping
+2023-10-23,Bus Ticket,-3.50,Transport
+2023-10-24,Cinema,-25.00,Entertainment
+2023-10-25,Groceries Store,-95.75,Groceries
+2023-10-26,Internet Bill,-50.00,Utilities
+2023-10-27,Subway,-8.60,Food
+2023-10-28,Amazon,-120.00,Shopping
+2023-10-29,Taxi,-22.00,Transport
+2023-10-30,Salary,3500.00,Income
+2023-10-31,Burger King,-11.45,Food
+2023-11-01,Starbucks,-6.20,Food
+2023-11-02,Target,-140.00,Shopping
+2023-11-03,Salary,3500.00,Income
+2023-11-04,Uber,-20.00,Transport
+2023-11-05,Netflix,-15.99,Entertainment
+2023-11-06,KFC,-13.50,Food
+2023-11-07,Walmart,-110.00,Groceries
+2023-11-08,Electric Bill,-115.00,Utilities
+2023-11-09,Amazon,-60.00,Shopping
+2023-11-10,Spotify,-9.99,Entertainment
+2023-11-11,Shell Fuel,-55.00,Transport
+2023-11-12,Pharmacy,-18.00,Health
+2023-11-13,Uber,-17.25,Transport
+2023-11-14,Salary,3500.00,Income
+2023-11-15,Domino's Pizza,-21.50,Food
+2023-11-16,Internet Bill,-50.00,Utilities
+2023-11-17,Adidas,-95.00,Shopping
+2023-11-18,Cinema,-30.00,Entertainment
+2023-11-19,Groceries Store,-102.40,Groceries
+2023-11-20,Taxi,-19.00,Transport
+2023-11-21,Salary,3500.00,Income
+2023-11-22,Amazon,-80.00,Shopping
+2023-11-23,Uber,-15.00,Transport
+2023-11-24,KFC,-12.00,Food
+2023-11-25,Walmart,-98.00,Groceries
+2023-11-26,Electric Bill,-118.00,Utilities
+2023-11-27,Spotify,-9.99,Entertainment
+2023-11-28,Shell Fuel,-62.00,Transport
+2023-11-29,Pharmacy,-25.00,Health
+2023-11-30,Salary,3500.00,Income
+2023-12-01,Starbucks,-6.50,Food
+2023-12-02,Target,-135.00,Shopping
+2023-12-03,Uber,-19.00,Transport
+2023-12-04,Netflix,-15.99,Entertainment
+2023-12-05,Amazon,-55.00,Shopping
+2023-12-06,KFC,-13.20,Food
+2023-12-07,Walmart,-120.00,Groceries
+2023-12-08,Electric Bill,-125.00,Utilities
+2023-12-09,Spotify,-9.99,Entertainment
+2023-12-10,Shell Fuel,-58.00,Transport
+2023-12-11,Pharmacy,-20.00,Health
+2023-12-12,Uber,-18.50,Transport
+2023-12-13,Salary,3500.00,Income
+2023-12-14,Domino's Pizza,-22.00,Food
+2023-12-15,Internet Bill,-50.00,Utilities
+2023-12-16,Adidas,-90.00,Shopping
+2023-12-17,Cinema,-28.00,Entertainment
+2023-12-18,Groceries Store,-110.00,Groceries
+2023-12-19,Taxi,-21.00,Transport
+2023-12-20,Salary,3500.00,Income
+2023-12-21,Amazon,-70.00,Shopping
+2023-12-22,Uber,-16.00,Transport
+2023-12-23,KFC,-14.00,Food
+2023-12-24,Walmart,-130.00,Groceries
+2023-12-25,Gift Shop,-200.00,Shopping
+2023-12-26,Electric Bill,-122.00,Utilities
+2023-12-27,Spotify,-9.99,Entertainment
+2023-12-28,Shell Fuel,-65.00,Transport
+2023-12-29,Pharmacy,-24.00,Health
+2023-12-30,Salary,3500.00,Income
+2023-12-31,Restaurant,-45.00,Food

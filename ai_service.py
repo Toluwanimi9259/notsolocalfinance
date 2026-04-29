@@ -1,9 +1,12 @@
 from dotenv import load_dotenv
 load_dotenv()
 import os
-import logfire
+
 from typing import List, Dict, Any, Optional
 from pydantic_ai import Agent, RunContext, ModelRetry
+from langfuse import observe, propagate_attributes
+
+
 
 from pydantic_ai.messages import ModelMessage, ModelResponse, ModelRequest, TextPart, ToolCallPart
 
@@ -19,10 +22,18 @@ from tools import (
     get_upcoming_payments
 )
 
-# Optional: Initialize Logfire for observability
-if os.environ.get("LOGFIRE_TOKEN"):
-    logfire.configure()
-    logfire.instrument_pydantic_ai()
+# Enable Langfuse Instrumentation (OTel-based)
+Agent.instrument_all()
+
+# Diagnostic check for Langfuse connection
+from langfuse import get_client
+langfuse_diagnostic = get_client()
+if langfuse_diagnostic.auth_check():
+    print("DEBUG: Langfuse successfully authenticated!")
+else:
+    print(f"CRITICAL: Langfuse authentication failed! Check your credentials and HOST: {os.environ.get('LANGFUSE_HOST')}")
+
+
 
 # System Prompt
 SYSTEM_PROMPT = (
@@ -40,10 +51,12 @@ SYSTEM_PROMPT = (
 # Pydantic AI now supports OpenRouter natively. 
 # We pass the model directly without needing the openai library.
 agent = Agent(
-    'openrouter:mistralai/mistral-nemo',
+    'openrouter:qwen/qwen3.6-flash',
     system_prompt=SYSTEM_PROMPT,
     deps_type=str,
+    instrument=True
 )
+
 
 # Register Tools
 agent.tool(get_spending_by_category)
@@ -89,44 +102,47 @@ def _convert_history_to_pydantic_ai(history: List[Dict[str, Any]]) -> List[Model
             
     return pydantic_history
 
+@observe()
 async def chat_with_ai(messages: List[Dict[str, Any]], user_id: str) -> tuple[str, List[Dict[str, Any]]]:
     """
     Handles a conversation using Pydantic AI and OpenRouter.
     Returns (response_text, updated_messages_list)
     """
-    if not messages:
-        return "No message received.", messages
+    with propagate_attributes(user_id=user_id):
+        if not messages:
+            return "No message received.", messages
+            
+        last_message = messages[-1]
+        if last_message.get("role") != "user":
+             return "Please send a user message.", messages
+             
+        user_prompt = last_message.get("content", "")
+        history_messages = messages[:-1]
         
-    last_message = messages[-1]
-    if last_message.get("role") != "user":
-         return "Please send a user message.", messages
-         
-    user_prompt = last_message.get("content", "")
-    history_messages = messages[:-1]
+        try:
+            result = await agent.run(
+                user_prompt, 
+                message_history=_convert_history_to_pydantic_ai(history_messages),
+                deps=user_id
+            )
+            
+            # Build back JSON history format
+            new_history = []
+            for msg in result.all_messages():
+                if isinstance(msg, ModelRequest):
+                    for part in msg.parts:
+                        if isinstance(part, TextPart):
+                            new_history.append({"role": "user", "content": part.content})
+                elif isinstance(msg, ModelResponse):
+                    for part in msg.parts:
+                        if isinstance(part, TextPart):
+                             new_history.append({"role": "assistant", "content": part.content})
     
-    try:
-        result = await agent.run(
-            user_prompt, 
-            message_history=_convert_history_to_pydantic_ai(history_messages),
-            deps=user_id
-        )
-        
-        # Build back JSON history format
-        new_history = []
-        for msg in result.all_messages():
-            if isinstance(msg, ModelRequest):
-                for part in msg.parts:
-                    if isinstance(part, TextPart):
-                        new_history.append({"role": "user", "content": part.content})
-            elif isinstance(msg, ModelResponse):
-                for part in msg.parts:
-                    if isinstance(part, TextPart):
-                         new_history.append({"role": "assistant", "content": part.content})
+            return result.output, new_history
+    
+        except Exception as e:
+            return f"Error: {str(e)}", messages
 
-        return result.output, new_history
-
-    except Exception as e:
-        return f"Error: {str(e)}", messages
 
 # Backward compatibility
 chat_with_granite = chat_with_ai
