@@ -20,6 +20,23 @@ from auth import (
     oauth,
     SECRET_KEY
 )
+import time
+from collections import defaultdict
+
+# In-memory rate limiting: user_id -> list of timestamps
+RATE_LIMIT_STORE = defaultdict(list)
+MAX_REQUESTS_PER_MINUTE = 10
+
+async def get_rate_limited_user(current_user_id: Annotated[str, Depends(get_current_user_id)]):
+    now = time.time()
+    # Clean up requests older than 60 seconds
+    RATE_LIMIT_STORE[current_user_id] = [t for t in RATE_LIMIT_STORE[current_user_id] if now - t < 60]
+    
+    if len(RATE_LIMIT_STORE[current_user_id]) >= MAX_REQUESTS_PER_MINUTE:
+        raise HTTPException(status_code=429, detail="Rate limit exceeded. Please try again in a minute.")
+    
+    RATE_LIMIT_STORE[current_user_id].append(now)
+    return current_user_id
 
 app = FastAPI(title="Personal Finance Assistant API")
 
@@ -65,7 +82,7 @@ async def auth_github_callback(request: Request):
 # --- Protected Data Endpoints ---
 
 @app.post("/clear")
-async def clear_data(current_user_id: Annotated[str, Depends(get_current_user_id)]):
+async def clear_data(current_user_id: Annotated[str, Depends(get_rate_limited_user)]):
     success = clear_vdb_for_user(current_user_id)
     if success:
         return {"status": "success", "message": "Your transaction data has been deleted."}
@@ -73,7 +90,7 @@ async def clear_data(current_user_id: Annotated[str, Depends(get_current_user_id
 
 @app.post("/upload/file", response_model=FileUploadResponse)
 async def upload_file(
-    current_user_id: Annotated[str, Depends(get_current_user_id)],
+    current_user_id: Annotated[str, Depends(get_rate_limited_user)],
     file: UploadFile = File(...)
 ):
     content = await file.read()
@@ -109,7 +126,7 @@ async def upload_file(
 @app.post("/chat", response_model=ChatResponse)
 async def chat(
     request: ChatRequest,
-    current_user_id: Annotated[str, Depends(get_current_user_id)]
+    current_user_id: Annotated[str, Depends(get_rate_limited_user)]
 ):
     print(f"DEBUG MAIN: received session_id={request.session_id}")
     try:
