@@ -29,6 +29,7 @@ class ToolCallRequest(BaseModel):
 
 class ChatRequest(BaseModel):
     messages: List[dict] = Field(..., description="List of discussion messages, where each message has a 'role' and 'content'")
+    session_id: Optional[str] = Field(default=None, description="A unique identifier for the current chat session")
 
 class FileUploadResponse(BaseModel):
     status: str

@@ -1,9 +1,12 @@
 from dotenv import load_dotenv
 load_dotenv()
 import os
-import logfire
+
 from typing import List, Dict, Any, Optional
 from pydantic_ai import Agent, RunContext, ModelRetry
+from langfuse import observe, propagate_attributes
+
+
 
 from pydantic_ai.messages import ModelMessage, ModelResponse, ModelRequest, TextPart, ToolCallPart
 
@@ -19,10 +22,18 @@ from tools import (
     get_upcoming_payments
 )
 
-# Optional: Initialize Logfire for observability
-if os.environ.get("LOGFIRE_TOKEN"):
-    logfire.configure()
-    logfire.instrument_pydantic_ai()
+# Enable Langfuse Instrumentation (OTel-based)
+Agent.instrument_all()
+
+# Diagnostic check for Langfuse connection
+from langfuse import get_client
+langfuse_diagnostic = get_client()
+if langfuse_diagnostic.auth_check():
+    print("DEBUG: Langfuse successfully authenticated!")
+else:
+    print(f"CRITICAL: Langfuse authentication failed! Check your credentials and HOST: {os.environ.get('LANGFUSE_HOST')}")
+
+
 
 # System Prompt
 SYSTEM_PROMPT = (
@@ -43,7 +54,9 @@ agent = Agent(
     'openrouter:mistralai/mistral-nemo',
     system_prompt=SYSTEM_PROMPT,
     deps_type=str,
+    instrument=True
 )
+
 
 # Register Tools
 agent.tool(get_spending_by_category)
@@ -89,7 +102,8 @@ def _convert_history_to_pydantic_ai(history: List[Dict[str, Any]]) -> List[Model
             
     return pydantic_history
 
-async def chat_with_ai(messages: List[Dict[str, Any]], user_id: str) -> tuple[str, List[Dict[str, Any]]]:
+@observe()
+async def chat_with_ai(messages: List[Dict[str, Any]], user_id: str, session_id: Optional[str] = None) -> tuple[str, List[Dict[str, Any]]]:
     """
     Handles a conversation using Pydantic AI and OpenRouter.
     Returns (response_text, updated_messages_list)
@@ -127,6 +141,7 @@ async def chat_with_ai(messages: List[Dict[str, Any]], user_id: str) -> tuple[st
 
     except Exception as e:
         return f"Error: {str(e)}", messages
+
 
 # Backward compatibility
 chat_with_granite = chat_with_ai

@@ -23,6 +23,7 @@ dependencies = [
     "httpx",
     "itsdangerous",
     "fastembed",
+    "langfuse>=4.5.1",
 ]
 
 [build-system]

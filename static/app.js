@@ -23,7 +23,45 @@ document.addEventListener('DOMContentLoaded', () => {
     const clearChatBtn = document.getElementById('clear-chat-btn');
     const clearDataBtn = document.getElementById('clear-data-btn');
 
+    function generateSessionId() {
+        return (window.crypto && crypto.randomUUID) ? crypto.randomUUID() : 'session-' + Date.now() + '-' + Math.random().toString(36).substring(2);
+    }
+
     let conversationHistory = [];
+    const savedHistory = sessionStorage.getItem('finance_ai_history');
+    if (savedHistory) {
+        try { conversationHistory = JSON.parse(savedHistory); } catch(e) {}
+    }
+
+    let sessionId = sessionStorage.getItem('finance_ai_session_id');
+    if (!sessionId) {
+        sessionId = generateSessionId();
+        sessionStorage.setItem('finance_ai_session_id', sessionId);
+    }
+    
+    function saveSession() {
+        sessionStorage.setItem('finance_ai_session_id', sessionId);
+        sessionStorage.setItem('finance_ai_history', JSON.stringify(conversationHistory));
+    }
+
+    console.log("Finance AI Initialized with Session ID:", sessionId);
+
+    // Restore UI from history
+    if (conversationHistory.length > 0) {
+        chatWindow.innerHTML = ''; // Clear default greeting
+        for (const msg of conversationHistory) {
+            const sender = msg.role === 'user' ? 'User' : 'AI';
+            const msgDiv = document.createElement('div');
+            msgDiv.className = `message ${sender.toLowerCase()}`;
+            msgDiv.innerHTML = `
+                <div class="avatar">${sender === 'User' ? 'U' : 'AI'}</div>
+                <div class="msg-content">${sender === 'User' ? escapeHTML(msg.content) : marked.parse(msg.content)}</div>
+            `;
+            chatWindow.appendChild(msgDiv);
+        }
+        // Defer scroll to bottom to ensure elements are rendered
+        setTimeout(() => { chatWindow.scrollTop = chatWindow.scrollHeight; }, 100);
+    }
 
     // --- Authentication Logic ---
 
@@ -106,8 +144,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 showStatus(result.message, 'success');
                 uploadForm.reset();
                 fileNameDisplay.textContent = 'No file chosen';
-                conversationHistory = [];
-                addMessageToChat('AI', `I've successfully processed ${result.num_transactions} transactions. How can I analyze them for you?`);
+                const replyText = `I've successfully processed ${result.num_transactions} transactions. How can I analyze them for you?`;
+                conversationHistory.push({ role: 'assistant', content: replyText });
+                saveSession();
+                addMessageToChat('AI', replyText);
             } else {
                 showStatus(result.detail || 'Upload failed', 'error');
             }
@@ -153,6 +193,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         addMessageToChat('User', text);
         conversationHistory.push({ role: 'user', content: text });
+        saveSession();
 
         chatInput.value = '';
         chatInput.disabled = true;
@@ -160,11 +201,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const loadingId = addTypingIndicator();
 
+        console.log("Sending chat request with session_id:", sessionId);
         try {
             const response = await authFetch('/chat', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ messages: conversationHistory })
+                body: JSON.stringify({ messages: conversationHistory, session_id: sessionId })
             });
 
             if (!response) {
@@ -178,6 +220,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (response.ok) {
                 if (result.history) conversationHistory = result.history;
                 else conversationHistory.push({ role: 'assistant', content: result.reply });
+                saveSession();
                 addMessageToChat('AI', result.reply);
             } else {
                 addMessageToChat('AI', `Error: ${result.detail || 'Failed to process'}`);
@@ -194,6 +237,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     clearChatBtn.addEventListener('click', () => {
         conversationHistory = [];
+        sessionId = generateSessionId();
+        saveSession();
+        console.log("New chat started with session_id:", sessionId);
         chatWindow.innerHTML = `<div class="message ai"><div class="avatar">AI</div><div class="msg-content"><p>History cleared. What's next?</p></div></div>`;
     });
 

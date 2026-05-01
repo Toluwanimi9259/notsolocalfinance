@@ -10,6 +10,12 @@
       "source": "jeffallan/claude-skills",
       "sourceType": "github",
       "computedHash": "79ca799628334a9699838756571109d35e73701ef5a375b7f4e0da1e14b419a8"
+    },
+    "langfuse": {
+      "source": "langfuse/skills",
+      "sourceType": "github",
+      "skillPath": "skills/langfuse/SKILL.md",
+      "computedHash": "a72c15d6329867b84c4e7456f4e04d8c06ce5298d1d0068dbe864b8b00fb406c"
     }
   }
 }
