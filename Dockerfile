@@ -18,4 +18,4 @@ COPY . .
 EXPOSE 7536
 
 # Run the application using the system Python (which now has all packages)
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "7536"]
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "7536", "--proxy-headers", "--forwarded-allow-ips", "*"]

@@ -19,7 +19,6 @@ env/
 .gitignore
 
 # Env
-.env
 .python-version
 
 # Application specific
