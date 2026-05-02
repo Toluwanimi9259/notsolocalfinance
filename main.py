@@ -1,6 +1,7 @@
 from dotenv import load_dotenv
 load_dotenv()
 from fastapi import FastAPI, UploadFile, File, HTTPException, Request, Depends, status
+from fastapi.responses import StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from starlette.middleware.sessions import SessionMiddleware
@@ -8,7 +9,7 @@ from typing import Annotated
 import uvicorn
 from datetime import timedelta
 
-from models import ChatRequest, ChatResponse, FileUploadResponse
+from models import ChatRequest, FileUploadResponse
 from parsers import parse_csv, parse_pdf
 from vdb import store_transactions_in_vdb, clear_vdb_for_user
 from ai_service import chat_with_granite
@@ -123,18 +124,17 @@ async def upload_file(
     except Exception as e:
          raise HTTPException(status_code=500, detail=f"Error: {str(e)}")
 
-@app.post("/chat", response_model=ChatResponse)
+@app.post("/chat")
 async def chat(
     request: ChatRequest,
     current_user_id: Annotated[str, Depends(get_rate_limited_user)]
 ):
     print(f"DEBUG MAIN: received session_id={request.session_id}")
-    try:
+    async def generator():
         with propagate_attributes(user_id=current_user_id, session_id=request.session_id):
-            reply_text, updated_history = await chat_with_granite(request.messages, current_user_id, request.session_id)
-        return ChatResponse(reply=reply_text, history=updated_history)
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error: {str(e)}")
+            async for chunk in chat_with_granite(request.messages, current_user_id, request.session_id):
+                yield chunk
+    return StreamingResponse(generator(), media_type="application/x-ndjson")
 
 if __name__ == "__main__":
     uvicorn.run("main:app", host="0.0.0.0", port=7356, reload=True)

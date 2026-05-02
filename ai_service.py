@@ -2,13 +2,14 @@ from dotenv import load_dotenv
 load_dotenv()
 import os
 
-from typing import List, Dict, Any, Optional
+from typing import List, Dict, Any, Optional, AsyncGenerator
+import json
 from pydantic_ai import Agent, RunContext, ModelRetry
 from langfuse import observe, propagate_attributes
 
 
 
-from pydantic_ai.messages import ModelMessage, ModelResponse, ModelRequest, TextPart, ToolCallPart
+from pydantic_ai.messages import ModelMessage, ModelResponse, ModelRequest, TextPart, UserPromptPart
 
 from tools import (
     get_spending_by_category, get_largest_expenses, semantic_search_transactions,
@@ -96,52 +97,80 @@ def _convert_history_to_pydantic_ai(history: List[Dict[str, Any]]) -> List[Model
         content = msg.get("content", "")
         
         if role == "user":
-            pydantic_history.append(ModelRequest(parts=[TextPart(content)]))
+            pydantic_history.append(ModelRequest(parts=[UserPromptPart(content=content)]))
         elif role == "assistant":
-            pydantic_history.append(ModelResponse(parts=[TextPart(content)]))
+            pydantic_history.append(ModelResponse(parts=[TextPart(content=content)]))
             
     return pydantic_history
 
 @observe()
-async def chat_with_ai(messages: List[Dict[str, Any]], user_id: str, session_id: Optional[str] = None) -> tuple[str, List[Dict[str, Any]]]:
+async def chat_with_ai_stream(messages: List[Dict[str, Any]], user_id: str, session_id: Optional[str] = None) -> AsyncGenerator[str, None]:
     """
-    Handles a conversation using Pydantic AI and OpenRouter.
-    Returns (response_text, updated_messages_list)
+    Handles a conversation using Pydantic AI and OpenRouter with streaming.
+    Yields JSON chunks and finally the updated history.
     """
     if not messages:
-        return "No message received.", messages
+        yield json.dumps({"type": "chunk", "content": "No message received."}) + "\n"
+        yield json.dumps({"type": "history", "content": messages}) + "\n"
+        return
         
     last_message = messages[-1]
     if last_message.get("role") != "user":
-         return "Please send a user message.", messages
+         yield json.dumps({"type": "chunk", "content": "Please send a user message."}) + "\n"
+         yield json.dumps({"type": "history", "content": messages}) + "\n"
+         return
          
     user_prompt = last_message.get("content", "")
     history_messages = messages[:-1]
     
     try:
-        result = await agent.run(
-            user_prompt, 
-            message_history=_convert_history_to_pydantic_ai(history_messages),
-            deps=user_id
-        )
+        msg_history = _convert_history_to_pydantic_ai(history_messages)
+        prompt = user_prompt
         
+        while True:
+            async with agent.run_stream(
+                prompt, 
+                message_history=msg_history,
+                deps=user_id
+            ) as result:
+                text_streamed = False
+                async for chunk in result.stream_text(delta=True):
+                    if chunk:
+                        yield json.dumps({"type": "chunk", "content": chunk}) + "\n"
+                        text_streamed = True
+                
+                msg_history = result.all_messages()
+                
+                last_msg = msg_history[-1]
+                has_text = False
+                if isinstance(last_msg, ModelResponse):
+                    for part in last_msg.parts:
+                        if hasattr(part, 'content') and isinstance(part, TextPart) and part.content:
+                            has_text = True
+                            break
+                            
+                if text_streamed or has_text:
+                    break
+                prompt = None
+            
         # Build back JSON history format
         new_history = []
-        for msg in result.all_messages():
+        for msg in msg_history:
             if isinstance(msg, ModelRequest):
                 for part in msg.parts:
-                    if isinstance(part, TextPart):
+                    if hasattr(part, 'content') and isinstance(part, UserPromptPart):
                         new_history.append({"role": "user", "content": part.content})
             elif isinstance(msg, ModelResponse):
                 for part in msg.parts:
-                    if isinstance(part, TextPart):
+                    if hasattr(part, 'content') and isinstance(part, TextPart):
                          new_history.append({"role": "assistant", "content": part.content})
 
-        return result.output, new_history
+        yield json.dumps({"type": "history", "content": new_history}) + "\n"
 
     except Exception as e:
-        return f"Error: {str(e)}", messages
+        yield json.dumps({"type": "chunk", "content": f"Error: {str(e)}"}) + "\n"
+        yield json.dumps({"type": "history", "content": messages}) + "\n"
 
 
 # Backward compatibility
-chat_with_granite = chat_with_ai
+chat_with_granite = chat_with_ai_stream
