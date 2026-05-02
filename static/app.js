@@ -274,15 +274,66 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;
             }
 
-            const result = await response.json();
-            removeTypingIndicator(loadingId);
-
             if (response.ok) {
-                if (result.history) conversationHistory = result.history;
-                else conversationHistory.push({ role: 'assistant', content: result.reply });
-                saveSession();
-                addMessageToChat('AI', result.reply);
+                const reader = response.body.getReader();
+                const decoder = new TextDecoder("utf-8");
+                let accumulatedText = "";
+                let accumulatedJSON = "";
+                
+                let msgDiv = null;
+                let contentDiv = null;
+                let indicatorRemoved = false;
+
+                while (true) {
+                    const { done, value } = await reader.read();
+                    if (done) break;
+                    
+                    const chunkText = decoder.decode(value, { stream: true });
+                    accumulatedJSON += chunkText;
+                    
+                    const lines = accumulatedJSON.split('\n');
+                    accumulatedJSON = lines.pop(); // keep the last incomplete line
+                    
+                    for (const line of lines) {
+                        if (!line.trim()) continue;
+                        try {
+                            const data = JSON.parse(line);
+                            if (data.type === "chunk") {
+                                if (!indicatorRemoved) {
+                                    removeTypingIndicator(loadingId);
+                                    indicatorRemoved = true;
+                                    
+                                    // Create message container
+                                    msgDiv = document.createElement('div');
+                                    msgDiv.className = `message ai`;
+                                    msgDiv.innerHTML = `
+                                        <div class="avatar"><i data-lucide="bot" size="18"></i></div>
+                                        <div class="msg-content"></div>
+                                    `;
+                                    chatWindow.appendChild(msgDiv);
+                                    lucide.createIcons();
+                                    contentDiv = msgDiv.querySelector('.msg-content');
+                                }
+                                accumulatedText += data.content;
+                                contentDiv.innerHTML = marked.parse(accumulatedText);
+                                scrollToBottom();
+                            } else if (data.type === "history") {
+                                conversationHistory = data.content;
+                                saveSession();
+                            }
+                        } catch (e) {
+                            console.error("Error parsing JSON chunk:", e, line);
+                        }
+                    }
+                }
+                
+                // Ensure indicator is removed if stream ended without chunks
+                if (!indicatorRemoved) {
+                    removeTypingIndicator(loadingId);
+                }
             } else {
+                removeTypingIndicator(loadingId);
+                const result = await response.json().catch(() => ({}));
                 addMessageToChat('AI', `Error: ${result.detail || 'Failed to process'}`);
             }
         } catch (error) {

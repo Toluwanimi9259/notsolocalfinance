@@ -19,6 +19,7 @@ We have transformed this from a local prototype into a secure, multi-tenant web 
 - **Mistral Nemo Integration**: Upgraded the core agent to use Mistral Nemo (via OpenRouter) for superior reasoning and financial tool use.
 - **20+ Specialized Tools**: Equipped the agent with tools for spending velocity, anomaly detection, merchant comparison, and subscription tracking.
 - **RAG (Retrieval-Augmented Generation)**: Integrated Qdrant with local FastEmbed support for high-speed semantic search across years of financial data.
+- **Real-Time Streaming Architecture**: Built a custom multi-turn streaming loop using FastAPI `StreamingResponse` and NDJSON, allowing the UI to render markdown token-by-token while perfectly handling intermediate tool executions.
 
 ### 📊 Data Processing
 - **Robust Multi-Format Parsing**: Built an advanced ingestion engine that handles complex PDF layouts and CSV bank statements with varying schemas.
@@ -26,7 +27,8 @@ We have transformed this from a local prototype into a secure, multi-tenant web 
 - **Smart Formatting**: Standardizes all dates into YYYY-MM-DD for accurate time-series analysis by the AI.
 
 ### 🎨 User Experience
-- **Premium Dashboard**: A sleek, dark-mode interface with glassmorphism aesthetics and real-time chat.
+- **Premium Dashboard**: A sleek, dark-mode interface with glassmorphism aesthetics.
+- **Real-Time Token Streaming**: Watch the AI construct its financial analysis in real-time. The UI intelligently maintains typing indicators while tools execute, then instantly streams the markdown response.
 - **Action-Oriented Feedback**: Instant parsing feedback and a dedicated transaction loading indicator.
 
 ## 🛠️ Setup & Local Development
