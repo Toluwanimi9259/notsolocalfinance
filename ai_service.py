@@ -45,8 +45,13 @@ SYSTEM_PROMPT = (
     "Do not assume or hallucinate a specific month (like '-07') unless the user explicitly asks for it. "
     "IMPORTANT: When searching for 'sender' or 'receiver', note that the transaction descriptions usually "
     "contain phrases like 'FROM [Name]' or 'TO [Name]'. Do not search for the literal word 'sender'; "
-    "instead, search for specific names or use 'FROM' / 'TO' keywords in your query to find relevant entries."
+    "instead, search for specific names or use 'FROM' / 'TO' keywords in your query to find relevant entries.\n\n"
+    "GUARDRAILS:\n"
+    "1. You are ONLY allowed to perform tasks that involve analyzing uploaded transactions data or answering personal finance questions.\n"
+    "2. You MUST NOT perform non-financial tasks such as generating code, writing stories, or general knowledge questions.\n"
+    "3. If a user asks for a non-financial task (e.g., 'generate code for me'), you must politely refuse and explain that you are a specialized financial assistant."
 )
+
 
 # Initialize Agent with native OpenRouter support
 # Pydantic AI now supports OpenRouter natively. 
@@ -57,6 +62,28 @@ agent = Agent(
     deps_type=str,
     instrument=True
 )
+
+# Guardrail Agent for Intent Classification
+GUARD_PROMPT = (
+    "You are a security filter for a specialized Personal Finance AI. "
+    "Your job is to determine if a user's request is related to personal finance, "
+    "bank transactions, spending analysis, income, or budgeting. "
+    "IF THE REQUEST IS ABOUT ANYTHING ELSE (e.g., coding, programming, 'generate code', "
+    "general knowledge, creative writing, roleplay), YOU MUST OUTPUT 'BLOCK'. "
+    "IF IT IS FINANCIAL, OUTPUT 'ALLOW'. "
+    "Reply with EXACTLY one word: 'ALLOW' or 'BLOCK'."
+)
+guard_agent = Agent('openrouter:mistralai/mistral-nemo', system_prompt=GUARD_PROMPT)
+
+async def is_request_allowed(prompt: str) -> bool:
+    """Check if the request is financial in nature."""
+    try:
+        # We use a very low token limit or just expect a single word
+        res = await guard_agent.run(prompt)
+        return "ALLOW" in res.data.upper()
+    except Exception as e:
+        print(f"DEBUG GUARD: Error in classification: {e}")
+        return True # Fallback to ALLOW on error to avoid blocking valid users
 
 
 # Register Tools
@@ -124,6 +151,12 @@ async def chat_with_ai_stream(messages: List[Dict[str, Any]], user_id: str, sess
     history_messages = messages[:-1]
     
     try:
+        # --- PRE-CHECK GUARDRAIL ---
+        if not await is_request_allowed(user_prompt):
+             yield json.dumps({"type": "chunk", "content": "I'm sorry, I am a specialized financial assistant. I can only help with transaction analysis, spending insights, and personal finance queries. I cannot perform non-financial tasks like code generation or general storytelling."}) + "\n"
+             yield json.dumps({"type": "history", "content": messages}) + "\n"
+             return
+
         msg_history = _convert_history_to_pydantic_ai(history_messages)
         prompt = user_prompt
         

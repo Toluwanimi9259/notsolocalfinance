@@ -10,6 +10,7 @@ We have transformed this from a local prototype into a secure, multi-tenant web 
 - **Stateless GitHub OAuth**: Replaced local password management with a secure, stateless GitHub OAuth2 flow. No user passwords are stored locally.
 - **JWT-Based Sessions**: Implemented JSON Web Tokens for session management, ensuring fast and secure authenticated requests.
 - **Identity Isolation**: Engineered the system to use GitHub IDs as unique identifiers, ensuring total data isolation in the vector database.
+- **Advanced Financial Guardrails**: Implemented a robust two-layer intent classification system. A high-speed classifier pre-screens all requests to block non-financial queries (e.g., code generation, storytelling) before they reach the main assistant, ensuring strict domain focus.
 
 ### 🏛️ Architectural Evolution
 - **From OpenAI to Pydantic AI**: Successfully transitioned the entire agent logic from raw, unstructured OpenAI API calls to the **Pydantic AI** framework. This provided:
@@ -20,6 +21,7 @@ We have transformed this from a local prototype into a secure, multi-tenant web 
 - **20+ Specialized Tools**: Equipped the agent with tools for spending velocity, anomaly detection, merchant comparison, and subscription tracking.
 - **RAG (Retrieval-Augmented Generation)**: Integrated Qdrant with local FastEmbed support for high-speed semantic search across years of financial data.
 - **Real-Time Streaming Architecture**: Built a custom multi-turn streaming loop using FastAPI `StreamingResponse` and NDJSON, allowing the UI to render markdown token-by-token while perfectly handling intermediate tool executions.
+- **Multi-Agent Guardrail Pattern**: Integrated a pre-check classification agent that intercepts non-financial requests, providing a secure and specialized user experience.
 
 ### 📊 Data Processing
 - **Robust Multi-Format Parsing**: Built an advanced ingestion engine that handles complex PDF layouts and CSV bank statements with varying schemas.
