@@ -112,12 +112,19 @@ document.addEventListener('DOMContentLoaded', () => {
     // Restore UI from history
     if (conversationHistory.length > 0) {
         chatWindow.innerHTML = ''; // Clear default greeting
+        let hasUserMessage = false;
         for (const msg of conversationHistory) {
             addMessageToChat(msg.role === 'assistant' ? 'AI' : 'User', msg.content, false);
+            if (msg.role === 'user') hasUserMessage = true;
         }
         enableChat();
+        if (hasUserMessage) {
+            sampleQuestions.classList.add('hidden');
+        }
         // Defer scroll to bottom to ensure elements are rendered
         setTimeout(() => { chatWindow.scrollTop = chatWindow.scrollHeight; }, 100);
+    } else {
+        disableChat();
     }
 
     // --- Authentication Logic ---
@@ -135,9 +142,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
     checkAuth();
 
-    logoutBtn.addEventListener('click', () => {
+    logoutBtn.addEventListener('click', async () => {
+        try {
+            await authFetch('/clear', { method: 'POST' });
+        } catch (e) {
+            console.error("Failed to clear DB on sign out", e);
+        }
         localStorage.removeItem('finance_ai_token');
         localStorage.removeItem('finance_ai_username');
+        sessionStorage.removeItem('finance_ai_session_id');
+        sessionStorage.removeItem('finance_ai_history');
         location.reload();
     });
 
@@ -232,6 +246,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (!response) return;
                 if (response.ok) {
                     showStatus("Data cleared successfully!", 'success');
+                    sessionStorage.removeItem('finance_ai_session_id');
+                    sessionStorage.removeItem('finance_ai_history');
                     setTimeout(() => location.reload(), 1500);
                 } else {
                     const error = await response.json();
@@ -250,6 +266,8 @@ document.addEventListener('DOMContentLoaded', () => {
         e.preventDefault();
         const text = chatInput.value.trim();
         if (!text) return;
+
+        sampleQuestions.classList.add('hidden');
 
         addMessageToChat('User', text);
         conversationHistory.push({ role: 'user', content: text });
@@ -346,14 +364,22 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    clearChatBtn.addEventListener('click', () => {
-        if (conversationHistory.length === 0) return;
+    clearChatBtn.addEventListener('click', async () => {
+        clearChatBtn.disabled = true;
+        try {
+            await authFetch('/clear', { method: 'POST' });
+        } catch (e) {
+            console.error("Failed to clear DB on new session", e);
+        } finally {
+            clearChatBtn.disabled = false;
+        }
+
         conversationHistory = [];
         sessionId = generateSessionId();
         saveSession();
         console.log("New chat started with session_id:", sessionId);
         chatWindow.innerHTML = '';
-        addMessageToChat('AI', 'Session reset. I\'m ready for new questions.');
+        addMessageToChat('AI', 'Session reset. Please upload a statement to begin.');
         disableChat();
     });
 
