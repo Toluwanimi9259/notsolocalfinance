@@ -56,6 +56,19 @@ uv sync
 uv run uvicorn main:app --port 7536 --reload
 ```
 
+## 🆔 User Identification & Resolution
+
+The system uses **GitHub Numeric IDs** as unique identifiers for data isolation in the vector database. This ensures that even if a user changes their GitHub username, their financial data remains securely linked to their account.
+
+### How to Resolve a GitHub ID to a Username
+If you need to identify a user from a GitHub ID found in the database or logs, you can query the GitHub API directly:
+
+```bash
+curl https://api.github.com/user/{github_id}
+```
+
+This will return the user's profile, including their current `login` (username), `avatar_url`, and other public details.
+
 ## 📈 Roadmap
 - [ ] Interactive spending charts (Chart.js)
 - [ ] Exportable financial reports
