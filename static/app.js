@@ -97,7 +97,6 @@ document.addEventListener('DOMContentLoaded', () => {
         chatInput.disabled = true;
         sendBtn.disabled = true;
         chatInput.placeholder = "Upload a statement to start chatting...";
-        sampleQuestions.classList.add('hidden');
     }
 
     // Handle sample question clicks
@@ -337,6 +336,10 @@ document.addEventListener('DOMContentLoaded', () => {
                                 scrollToBottom();
                             } else if (data.type === "history") {
                                 conversationHistory = data.content;
+                                // Auto-clear: Keep only the last 15 messages to maintain focus
+                                if (conversationHistory.length > 15) {
+                                    conversationHistory = conversationHistory.slice(-15);
+                                }
                                 saveSession();
                             }
                         } catch (e) {
@@ -364,23 +367,19 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    clearChatBtn.addEventListener('click', async () => {
-        clearChatBtn.disabled = true;
-        try {
-            await authFetch('/clear', { method: 'POST' });
-        } catch (e) {
-            console.error("Failed to clear DB on new session", e);
-        } finally {
-            clearChatBtn.disabled = false;
-        }
-
+    clearChatBtn.addEventListener('click', () => {
         conversationHistory = [];
         sessionId = generateSessionId();
         saveSession();
         console.log("New chat started with session_id:", sessionId);
+        
         chatWindow.innerHTML = '';
-        addMessageToChat('AI', 'Session reset. Please upload a statement to begin.');
-        disableChat();
+        addMessageToChat('AI', 'Conversation reset. Your data is still available. How can I help?');
+        
+        // Ensure chat remains enabled since we didn't wipe the DB
+        enableChat();
+        sampleQuestions.classList.remove('hidden');
+        chatInput.focus();
     });
 
     function addMessageToChat(sender, text, scroll = true) {
