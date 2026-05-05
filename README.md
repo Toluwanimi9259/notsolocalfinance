@@ -22,6 +22,9 @@ We have transformed this from a local prototype into a secure, multi-tenant web 
 - **RAG (Retrieval-Augmented Generation)**: Integrated Qdrant with local FastEmbed support for high-speed semantic search across years of financial data.
 - **Real-Time Streaming Architecture**: Built a custom multi-turn streaming loop using FastAPI `StreamingResponse` and NDJSON, allowing the UI to render markdown token-by-token while perfectly handling intermediate tool executions.
 - **Multi-Agent Guardrail Pattern**: Integrated a pre-check classification agent that intercepts non-financial requests, providing a secure and specialized user experience.
+- **Intelligent Session Management**: 
+    - **Non-Destructive Reset**: "New Session" resets conversation history without wiping the transaction database.
+    - **Auto-Clear History**: Automatically maintains a sliding window of the last 15 messages to ensure high-focus AI interactions.
 
 ### 📊 Data Processing
 - **Robust Multi-Format Parsing**: Built an advanced ingestion engine that handles complex PDF layouts and CSV bank statements with varying schemas.
